@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How to Create a Custom WordPress Theme from Scratch</title>
+<style>
+	@page { size: A4; margin: 18mm 18mm 20mm; }
+	:root {
+		--ink: #1b1f24;
+		--muted: #5b6470;
+		--accent: #21759b;
+		--accent-soft: #e8f2f7;
+		--code-bg: #f5f6f8;
+		--border: #dfe3e8;
+		--warn-bg: #fff6e5;
+		--warn: #b26a00;
+	}
+	* { box-sizing: border-box; }
+	html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+	body {
+		margin: 0;
+		font-family: "Segoe UI", system-ui, sans-serif;
+		font-size: 10.5pt;
+		line-height: 1.55;
+		color: var(--ink);
+		background: #fff;
+	}
+	h1, h2, h3 { line-height: 1.25; break-after: avoid; }
+	h2 {
+		font-size: 17pt;
+		margin: 0 0 10pt;
+		padding-bottom: 6pt;
+		border-bottom: 2px solid var(--accent);
+		color: var(--accent);
+	}
+	h2 .num { color: var(--muted); font-weight: 400; margin-right: 6pt; }
+	h3 { font-size: 12pt; margin: 16pt 0 6pt; }
+	p { margin: 0 0 8pt; }
+	ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+	li { margin-bottom: 3pt; }
+	a { color: var(--accent); text-decoration: none; }
+	code {
+		font-family: Consolas, "Cascadia Mono", monospace;
+		font-size: 9pt;
+		background: var(--code-bg);
+		padding: 1px 4px;
+		border-radius: 3px;
+	}
+	pre {
+		font-family: Consolas, "Cascadia Mono", monospace;
+		font-size: 8.6pt;
+		line-height: 1.45;
+		background: var(--code-bg);
+		border: 1px solid var(--border);
+		border-left: 3px solid var(--accent);
+		border-radius: 4px;
+		padding: 8pt 10pt;
+		margin: 0 0 10pt;
+		white-space: pre-wrap;
+		tab-size: 4;
+		break-inside: avoid;
+	}
+	pre code { background: none; padding: 0; font-size: inherit; }
+	.file { font-size: 8.5pt; color: var(--muted); margin: 0 0 2pt; font-family: Consolas, monospace; }
+	table { width: 100%; border-collapse: collapse; margin: 0 0 10pt; font-size: 9.5pt; break-inside: avoid; }
+	th, td { text-align: left; padding: 5pt 7pt; border-bottom: 1px solid var(--border); vertical-align: top; }
+	th { background: var(--accent-soft); font-weight: 600; }
+	.note, .warn {
+		padding: 8pt 10pt;
+		border-radius: 4px;
+		margin: 0 0 10pt;
+		break-inside: avoid;
+	}
+	.note { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+	.warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+	.note strong, .warn strong { display: block; margin-bottom: 2pt; }
+	section { break-before: page; }
+
+	/* Cover */
+	.cover {
+		height: 255mm;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding: 0 6mm;
+	}
+	.cover .kicker { color: var(--accent); font-weight: 600; letter-spacing: 1.5pt; text-transform: uppercase; font-size: 10pt; }
+	.cover h1 { font-size: 34pt; margin: 8pt 0 12pt; }
+	.cover .sub { font-size: 13pt; color: var(--muted); max-width: 140mm; }
+	.cover .meta { margin-top: 30pt; font-size: 10pt; color: var(--muted); border-top: 1px solid var(--border); padding-top: 10pt; }
+
+	/* Contents */
+	.toc ol { list-style: none; padding: 0; columns: 2; column-gap: 14mm; }
+	.toc li { padding: 4pt 0; border-bottom: 1px dotted var(--border); break-inside: avoid; }
+	.toc .n { color: var(--accent); font-weight: 600; display: inline-block; width: 22pt; }
+
+	.tree { font-family: Consolas, monospace; font-size: 8.8pt; }
+	.check li { list-style: none; margin-left: -14pt; }
+	.check li::before { content: "\2610"; margin-right: 6pt; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ COVER -->
+<div class="cover">
+	<div class="kicker">Developer Guide</div>
+	<h1>How to Create a Custom WordPress Theme from Scratch</h1>
+	<p class="sub">A step-by-step walkthrough of building a classic PHP theme: files, the template hierarchy, the Loop, functions.php, security, translation, testing and shipping.</p>
+	<div class="meta">
+		Companion to the <strong>blank-theme</strong> boilerplate in this folder<br>
+		Targets WordPress 6.0+ &middot; PHP 7.4+ &middot; October 2026
+	</div>
+</div>
+
+<!-- ================================================================ CONTENTS -->
+<section class="toc">
+	<h2>Contents</h2>
+	<ol>
+		<li><span class="n">1</span>What a theme is</li>
+		<li><span class="n">2</span>Set up a local environment</li>
+		<li><span class="n">3</span>The two required files</li>
+		<li><span class="n">4</span>The template hierarchy</li>
+		<li><span class="n">5</span>Header and footer</li>
+		<li><span class="n">6</span>The Loop</li>
+		<li><span class="n">7</span>functions.php</li>
+		<li><span class="n">8</span>Loading CSS and JavaScript</li>
+		<li><span class="n">9</span>Navigation menus</li>
+		<li><span class="n">10</span>Template parts</li>
+		<li><span class="n">11</span>Single, page, archive, search, 404</li>
+		<li><span class="n">12</span>Sidebars and widgets</li>
+		<li><span class="n">13</span>Comments</li>
+		<li><span class="n">14</span>Customizer settings</li>
+		<li><span class="n">15</span>Custom page templates</li>
+		<li><span class="n">16</span>Security: escape, sanitize, verify</li>
+		<li><span class="n">17</span>Translation (i18n)</li>
+		<li><span class="n">18</span>Child themes</li>
+		<li><span class="n">19</span>Testing and debugging</li>
+		<li><span class="n">20</span>Packaging and distribution</li>
+		<li><span class="n">21</span>Using the blank-theme boilerplate</li>
+		<li><span class="n">22</span>Launch checklist and resources</li>
+	</ol>
+</section>
+
+<!-- ================================================================ 1 -->
+<section>
+	<h2><span class="num">1</span>What a theme is</h2>
+	<p>A WordPress theme is a folder inside <code>wp-content/themes/</code> that controls how a site looks. WordPress decides <em>what</em> content to show (a post, a category, search results); the theme decides <em>how</em> to show it.</p>
+	<p>There are two kinds of theme today:</p>
+	<table>
+		<tr><th>Classic theme</th><th>Block theme</th></tr>
+		<tr>
+			<td>Templates are PHP files (<code>single.php</code>, <code>header.php</code>). Layout is edited in code. Menus, widgets and the Customizer work as before.</td>
+			<td>Templates are HTML files of blocks (<code>templates/single.html</code>). Layout is edited in the Site Editor. Configured mostly through <code>theme.json</code>.</td>
+		</tr>
+		<tr>
+			<td>Best for learning how WordPress works, for agency builds with fixed designs, and for full control in PHP.</td>
+			<td>Best when clients should edit headers, footers and templates visually.</td>
+		</tr>
+	</table>
+	<p>This guide builds a <strong>classic theme</strong>. Every concept here (the template hierarchy, hooks, enqueueing, escaping) still applies to block themes, which can also contain PHP.</p>
+
+	<h3>How a request becomes a page</h3>
+	<ol>
+		<li>A visitor opens a URL, e.g. <code>/2026/10/hello-world/</code>.</li>
+		<li>WordPress parses the URL and runs a database query for the matching content.</li>
+		<li>It walks the <strong>template hierarchy</strong> to choose a file from the active theme (here, <code>single.php</code>).</li>
+		<li>That template runs <strong>the Loop</strong> to print each post in the query.</li>
+		<li>Along the way, <strong>hooks</strong> (<code>wp_head</code>, <code>wp_footer</code>) let WordPress and plugins add their own output.</li>
+	</ol>
+</section>
+
+<!-- ================================================================ 2 -->
+<section>
+	<h2><span class="num">2</span>Set up a local environment</h2>
+	<p>Never build a theme on a live site. Run WordPress on your own machine with one of these:</p>
+	<table>
+		<tr><th>Tool</th><th>Notes</th></tr>
+		<tr><td><strong>LocalWP</strong> (localwp.com)</td><td>One-click sites with PHP, MySQL and SSL. Easiest choice on Windows and macOS.</td></tr>
+		<tr><td><strong>wp-env</strong> (<code>@wordpress/env</code>)</td><td>Docker-based, run with <code>npx wp-env start</code> from the theme folder. Good for teams.</td></tr>
+		<tr><td><strong>XAMPP / Laragon / MAMP</strong></td><td>Classic Apache + MySQL + PHP stacks; install WordPress by hand.</td></tr>
+		<tr><td><strong>WordPress Playground</strong></td><td>Runs WordPress in the browser. Great for quick experiments, not for long work.</td></tr>
+	</table>
+
+	<h3>Turn on debugging</h3>
+	<p>In <code>wp-config.php</code>, above the line <em>"That's all, stop editing!"</em>:</p>
+<pre><code>define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true );      // writes to wp-content/debug.log
+define( 'WP_DEBUG_DISPLAY', false ); // keep errors out of the page
+define( 'SCRIPT_DEBUG', true );      // load unminified core JS/CSS</code></pre>
+
+	<h3>Useful tools</h3>
+	<ul>
+		<li>A code editor (VS Code with the <em>PHP Intelephense</em> and <em>WordPress Snippets</em> extensions).</li>
+		<li><strong>Query Monitor</strong> plugin: shows which template file was used, queries, hooks and PHP errors.</li>
+		<li><strong>Theme Check</strong> plugin: runs the same checks as the WordPress.org theme review.</li>
+		<li><strong>WP-CLI</strong>: command line for WordPress (<code>wp theme activate</code>, <code>wp i18n make-pot</code>).</li>
+		<li><strong>Theme Unit Test data</strong>: an XML import with every edge case (long titles, nested comments, galleries).</li>
+	</ul>
+</section>
+
+<!-- ================================================================ 3 -->
+<section>
+	<h2><span class="num">3</span>The two required files</h2>
+	<p>A theme needs only two files to appear under <strong>Appearance &rarr; Themes</strong>: <code>style.css</code> and <code>index.php</code>.</p>
+
+	<h3>Create the folder</h3>
+	<p>Create <code>wp-content/themes/my-theme/</code>. The folder name is the theme's <em>slug</em>: lowercase, hyphens, no spaces.</p>
+
+	<h3>style.css: the theme header</h3>
+	<p>WordPress reads the comment at the top of <code>style.css</code> to learn the theme's name and details. Only <code>Theme Name</code> is required.</p>
+	<p class="file">my-theme/style.css</p>
+<pre><code>/*
+Theme Name:        My Theme
+Theme URI:         https://example.com/my-theme
+Author:            Your Name
+Author URI:        https://example.com
+Description:       A custom theme built from scratch.
+Version:           1.0.0
+Requires at least: 6.0
+Requires PHP:      7.4
+License:           GNU General Public License v2 or later
+License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain:       my-theme
+*/</code></pre>
+
+	<h3>index.php: the fallback template</h3>
+	<p class="file">my-theme/index.php</p>
+<pre><code>&lt;!doctype html&gt;
+&lt;html &lt;?php language_attributes(); ?&gt;&gt;
+&lt;head&gt;
+	&lt;meta charset="&lt;?php bloginfo( 'charset' ); ?&gt;"&gt;
+	&lt;?php wp_head(); ?&gt;
+&lt;/head&gt;
+&lt;body &lt;?php body_class(); ?&gt;&gt;
+	&lt;h1&gt;&lt;?php bloginfo( 'name' ); ?&gt;&lt;/h1&gt;
+
+	&lt;?php while ( have_posts() ) : the_post(); ?&gt;
+		&lt;h2&gt;&lt;a href="&lt;?php the_permalink(); ?&gt;"&gt;&lt;?php the_title(); ?&gt;&lt;/a&gt;&lt;/h2&gt;
+		&lt;?php the_content(); ?&gt;
+	&lt;?php endwhile; ?&gt;
+
+	&lt;?php wp_footer(); ?&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+	<p>Activate the theme. You now have a working (if plain) site. Everything that follows is about splitting this file up and adding features.</p>
+
+	<h3>Add a screenshot</h3>
+	<p>Add <code>screenshot.png</code> (1200&times;900 px) to the theme root. It's the thumbnail shown in the Themes screen.</p>
+</section>
+
+<!-- ================================================================ 4 -->
+<section>
+	<h2><span class="num">4</span>The template hierarchy</h2>
+	<p>For every request WordPress looks for the most specific template file, falling back step by step until it reaches <code>index.php</code>. You only create the files you need.</p>
+	<table>
+		<tr><th>Request</th><th>Files tried, most specific first</th></tr>
+		<tr><td>Front page</td><td><code>front-page.php</code> &rarr; <code>home.php</code> (if showing posts) or page templates &rarr; <code>index.php</code></td></tr>
+		<tr><td>Blog posts index</td><td><code>home.php</code> &rarr; <code>index.php</code></td></tr>
+		<tr><td>Single post</td><td><code>single-{post-type}-{slug}.php</code> &rarr; <code>single-{post-type}.php</code> &rarr; <code>single.php</code> &rarr; <code>singular.php</code> &rarr; <code>index.php</code></td></tr>
+		<tr><td>Static page</td><td>Custom template &rarr; <code>page-{slug}.php</code> &rarr; <code>page-{id}.php</code> &rarr; <code>page.php</code> &rarr; <code>singular.php</code> &rarr; <code>index.php</code></td></tr>
+		<tr><td>Category</td><td><code>category-{slug}.php</code> &rarr; <code>category-{id}.php</code> &rarr; <code>category.php</code> &rarr; <code>archive.php</code> &rarr; <code>index.php</code></td></tr>
+		<tr><td>Tag</td><td><code>tag-{slug}.php</code> &rarr; <code>tag.php</code> &rarr; <code>archive.php</code> &rarr; <code>index.php</code></td></tr>
+		<tr><td>Custom taxonomy</td><td><code>taxonomy-{tax}-{term}.php</code> &rarr; <code>taxonomy-{tax}.php</code> &rarr; <code>taxonomy.php</code> &rarr; <code>archive.php</code></td></tr>
+		<tr><td>Author</td><td><code>author-{nicename}.php</code> &rarr; <code>author.php</code> &rarr; <code>archive.php</code></td></tr>
+		<tr><td>Date</td><td><code>date.php</code> &rarr; <code>archive.php</code> &rarr; <code>index.php</code></td></tr>
+		<tr><td>Custom post type archive</td><td><code>archive-{post-type}.php</code> &rarr; <code>archive.php</code></td></tr>
+		<tr><td>Attachment</td><td><code>{mime-type}.php</code> (e.g. <code>image.php</code>) &rarr; <code>attachment.php</code> &rarr; <code>single.php</code></td></tr>
+		<tr><td>Search results</td><td><code>search.php</code> &rarr; <code>index.php</code></td></tr>
+		<tr><td>Not found</td><td><code>404.php</code> &rarr; <code>index.php</code></td></tr>
+	</table>
+	<div class="note"><strong>Tip</strong>Install Query Monitor and look at the "Template" panel on any page. It shows exactly which file WordPress picked and which ones it tried first.</div>
+	<p>A sensible starting set, which the boilerplate ships with: <code>index.php</code>, <code>single.php</code>, <code>page.php</code>, <code>archive.php</code>, <code>search.php</code> and <code>404.php</code>.</p>
+</section>
+
+<!-- ================================================================ 5 -->
+<section>
+	<h2><span class="num">5</span>Header and footer</h2>
+	<p>Every template repeats the same opening and closing HTML. Move it into <code>header.php</code> and <code>footer.php</code>, then load them with <code>get_header()</code> and <code>get_footer()</code>.</p>
+	<p class="file">my-theme/header.php</p>
+<pre><code>&lt;!doctype html&gt;
+&lt;html &lt;?php language_attributes(); ?&gt;&gt;
+&lt;head&gt;
+	&lt;meta charset="&lt;?php bloginfo( 'charset' ); ?&gt;"&gt;
+	&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+	&lt;?php wp_head(); ?&gt;
+&lt;/head&gt;
+&lt;body &lt;?php body_class(); ?&gt;&gt;
+&lt;?php wp_body_open(); ?&gt;
+&lt;header class="site-header"&gt;
+	&lt;a href="&lt;?php echo esc_url( home_url( '/' ) ); ?&gt;"&gt;&lt;?php bloginfo( 'name' ); ?&gt;&lt;/a&gt;
+&lt;/header&gt;</code></pre>
+	<p class="file">my-theme/footer.php</p>
+<pre><code>&lt;footer class="site-footer"&gt;
+	&amp;copy; &lt;?php echo esc_html( wp_date( 'Y' ) ); ?&gt; &lt;?php bloginfo( 'name' ); ?&gt;
+&lt;/footer&gt;
+&lt;?php wp_footer(); ?&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+	<h3>The three hooks you must never remove</h3>
+	<table>
+		<tr><th>Function</th><th>Where</th><th>Why</th></tr>
+		<tr><td><code>wp_head()</code></td><td>Just before <code>&lt;/head&gt;</code></td><td>Prints enqueued CSS, the <code>&lt;title&gt;</code>, SEO meta, and plugin output.</td></tr>
+		<tr><td><code>wp_body_open()</code></td><td>Right after <code>&lt;body&gt;</code></td><td>Used by analytics and tag-manager plugins.</td></tr>
+		<tr><td><code>wp_footer()</code></td><td>Just before <code>&lt;/body&gt;</code></td><td>Prints footer scripts and the admin bar. Without it many plugins break.</td></tr>
+	</table>
+	<p>You can have several headers: <code>get_header( 'shop' )</code> loads <code>header-shop.php</code>. The same works for <code>get_footer()</code> and <code>get_sidebar()</code>.</p>
+	<p>Don't hard-code a <code>&lt;title&gt;</code> tag. Add <code>add_theme_support( 'title-tag' )</code> in functions.php and WordPress (or your SEO plugin) prints it.</p>
+</section>
+
+<!-- ================================================================ 6 -->
+<section>
+	<h2><span class="num">6</span>The Loop</h2>
+	<p>The Loop is how a template prints the posts WordPress queried. It's the same in every template; only the markup inside changes.</p>
+<pre><code>&lt;?php if ( have_posts() ) : ?&gt;
+
+	&lt;?php while ( have_posts() ) : the_post(); ?&gt;
+		&lt;article id="post-&lt;?php the_ID(); ?&gt;" &lt;?php post_class(); ?&gt;&gt;
+			&lt;h2&gt;&lt;a href="&lt;?php the_permalink(); ?&gt;"&gt;&lt;?php the_title(); ?&gt;&lt;/a&gt;&lt;/h2&gt;
+			&lt;?php the_excerpt(); ?&gt;
+		&lt;/article&gt;
+	&lt;?php endwhile; ?&gt;
+
+	&lt;?php the_posts_pagination(); ?&gt;
+
+&lt;?php else : ?&gt;
+	&lt;p&gt;&lt;?php esc_html_e( 'Nothing found.', 'my-theme' ); ?&gt;&lt;/p&gt;
+&lt;?php endif; ?&gt;</code></pre>
+	<p><code>the_post()</code> moves to the next post and sets up the global <code>$post</code>, so template tags like <code>the_title()</code> know which post to print.</p>
+
+	<h3>Common template tags</h3>
+	<table>
+		<tr><th>Prints</th><th>Returns (for use in PHP)</th><th>Output</th></tr>
+		<tr><td><code>the_title()</code></td><td><code>get_the_title()</code></td><td>Post title</td></tr>
+		<tr><td><code>the_content()</code></td><td><code>get_the_content()</code></td><td>Full content, with blocks and shortcodes rendered</td></tr>
+		<tr><td><code>the_excerpt()</code></td><td><code>get_the_excerpt()</code></td><td>Summary</td></tr>
+		<tr><td><code>the_permalink()</code></td><td><code>get_permalink()</code></td><td>Post URL</td></tr>
+		<tr><td><code>the_post_thumbnail()</code></td><td><code>get_the_post_thumbnail()</code></td><td>Featured image</td></tr>
+		<tr><td><code>the_date()</code> / <code>the_time()</code></td><td><code>get_the_date()</code></td><td>Publish date</td></tr>
+		<tr><td><code>the_author()</code></td><td><code>get_the_author()</code></td><td>Author name</td></tr>
+		<tr><td><code>the_category()</code> / <code>the_tags()</code></td><td><code>get_the_category_list()</code></td><td>Terms</td></tr>
+	</table>
+	<p>The rule of thumb: <code>the_*</code> functions echo, <code>get_the_*</code> functions return a value.</p>
+
+	<h3>Custom queries</h3>
+	<p>To show a second list of posts (e.g. "Latest from News") use <code>WP_Query</code>, then reset afterwards so the main Loop isn't affected:</p>
+<pre><code>&lt;?php
+$news = new WP_Query( array( 'category_name' =&gt; 'news', 'posts_per_page' =&gt; 3 ) );
+while ( $news-&gt;have_posts() ) : $news-&gt;the_post();
+	the_title( '&lt;h3&gt;', '&lt;/h3&gt;' );
+endwhile;
+wp_reset_postdata();
+?&gt;</code></pre>
+	<div class="warn"><strong>Avoid query_posts()</strong>It replaces the main query and breaks pagination. To change the main query (e.g. 12 posts per page on archives), use the <code>pre_get_posts</code> action in functions.php instead.</div>
+</section>
+
+<!-- ================================================================ 7 -->
+<section>
+	<h2><span class="num">7</span>functions.php</h2>
+	<p><code>functions.php</code> runs on every page load, before any template. It's where you switch on theme features and attach code to hooks. It works like a plugin that's only active with your theme.</p>
+
+	<h3>Hooks in one paragraph</h3>
+	<p>WordPress fires <strong>actions</strong> at set moments (<code>after_setup_theme</code>, <code>wp_enqueue_scripts</code>, <code>widgets_init</code>) and runs your function when they fire. <strong>Filters</strong> pass a value through your function so you can change it and return it.</p>
+<pre><code>add_action( 'hook_name', 'my_theme_function' );        // do something
+add_filter( 'excerpt_length', fn() =&gt; 30 );            // change a value</code></pre>
+
+	<h3>Theme setup</h3>
+	<p class="file">my-theme/functions.php</p>
+<pre><code>&lt;?php
+function my_theme_setup() {
+	load_theme_textdomain( 'my-theme', get_template_directory() . '/languages' );
+
+	add_theme_support( 'title-tag' );          // WordPress prints &lt;title&gt;
+	add_theme_support( 'post-thumbnails' );    // featured images
+	add_theme_support( 'automatic-feed-links' );
+	add_theme_support( 'responsive-embeds' );
+	add_theme_support( 'align-wide' );         // wide/full block alignments
+	add_theme_support( 'custom-logo' );
+	add_theme_support( 'html5', array(
+		'search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'style', 'script',
+	) );
+
+	register_nav_menus( array(
+		'primary' =&gt; __( 'Primary Menu', 'my-theme' ),
+	) );
+}
+add_action( 'after_setup_theme', 'my_theme_setup' );</code></pre>
+
+	<h3>Prefix everything</h3>
+	<p>All your functions, constants, handles and options share one global namespace with WordPress core and every plugin. Prefix them with your theme slug (<code>my_theme_</code>) so they never collide. Wrapping helpers in <code>if ( ! function_exists( ... ) )</code> lets a child theme override them.</p>
+
+	<h3>Keep it organised</h3>
+	<p>Once functions.php grows, split it into files under <code>inc/</code> and load them:</p>
+<pre><code>require get_template_directory() . '/inc/template-tags.php';
+require get_template_directory() . '/inc/customizer.php';</code></pre>
+
+	<h3>Useful path functions</h3>
+	<table>
+		<tr><th>Function</th><th>Returns</th></tr>
+		<tr><td><code>get_template_directory()</code></td><td>Server path of the parent theme</td></tr>
+		<tr><td><code>get_template_directory_uri()</code></td><td>URL of the parent theme</td></tr>
+		<tr><td><code>get_stylesheet_directory()</code></td><td>Path of the active (child) theme</td></tr>
+		<tr><td><code>get_stylesheet_uri()</code></td><td>URL of the active theme's <code>style.css</code></td></tr>
+	</table>
+</section>
+
+<!-- ================================================================ 8 -->
+<section>
+	<h2><span class="num">8</span>Loading CSS and JavaScript</h2>
+	<p>Never paste <code>&lt;link&gt;</code> or <code>&lt;script&gt;</code> tags into header.php. <strong>Enqueue</strong> them so WordPress can manage dependencies, avoid duplicates and let plugins optimise them.</p>
+<pre><code>function my_theme_scripts() {
+	$ver = wp_get_theme()-&gt;get( 'Version' );
+
+	// The theme's style.css
+	wp_enqueue_style( 'my-theme-style', get_stylesheet_uri(), array(), $ver );
+
+	// An extra stylesheet
+	wp_enqueue_style( 'my-theme-main',
+		get_template_directory_uri() . '/assets/css/main.css',
+		array( 'my-theme-style' ), $ver );
+
+	// JavaScript, deferred and loaded in the footer
+	wp_enqueue_script( 'my-theme-main',
+		get_template_directory_uri() . '/assets/js/main.js',
+		array(), $ver,
+		array( 'strategy' =&gt; 'defer', 'in_footer' =&gt; true ) );
+
+	// Threaded comment replies
+	if ( is_singular() &amp;&amp; comments_open() &amp;&amp; get_option( 'thread_comments' ) ) {
+		wp_enqueue_script( 'comment-reply' );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'my_theme_scripts' );</code></pre>
+
+	<h3>Arguments explained</h3>
+	<ul>
+		<li><strong>Handle</strong>: a unique name, prefixed. Used for dependencies and for dequeuing.</li>
+		<li><strong>Source</strong>: the file URL.</li>
+		<li><strong>Dependencies</strong>: handles that must load first, e.g. <code>array( 'jquery' )</code>.</li>
+		<li><strong>Version</strong>: added as <code>?ver=</code> so browsers fetch a fresh copy when you release.</li>
+		<li><strong>Args / media</strong>: for scripts, <code>defer</code>/<code>async</code> and footer placement; for styles, the media query.</li>
+	</ul>
+
+	<h3>Passing PHP data to JavaScript</h3>
+<pre><code>wp_add_inline_script( 'my-theme-main',
+	'const MyTheme = ' . wp_json_encode( array(
+		'ajaxUrl' =&gt; admin_url( 'admin-ajax.php' ),
+		'nonce'   =&gt; wp_create_nonce( 'my_theme_ajax' ),
+	) ) . ';',
+	'before' );</code></pre>
+
+	<h3>Editor styles</h3>
+	<p>To make the block editor look like the front end, add <code>add_theme_support( 'editor-styles' )</code> and <code>add_editor_style( 'assets/css/editor.css' )</code> in your setup function.</p>
+	<div class="note"><strong>Build tools are optional</strong>Plain CSS and JS work fine. If you want Sass, modern JS bundling or Tailwind, run a build step (Vite, webpack or <code>@wordpress/scripts</code>) that outputs into <code>assets/</code> and enqueue the built files.</div>
+</section>
+
+<!-- ================================================================ 9 -->
+<section>
+	<h2><span class="num">9</span>Navigation menus</h2>
+	<p>Register menu <em>locations</em> in your setup function (see section 7). Site owners then build menus under <strong>Appearance &rarr; Menus</strong> and assign them to a location.</p>
+	<p>Print a location in a template:</p>
+<pre><code>&lt;nav class="main-navigation" aria-label="&lt;?php esc_attr_e( 'Primary', 'my-theme' ); ?&gt;"&gt;
+	&lt;?php
+	wp_nav_menu( array(
+		'theme_location' =&gt; 'primary',
+		'menu_id'        =&gt; 'primary-menu',
+		'container'      =&gt; false,
+		'depth'          =&gt; 2,
+		'fallback_cb'    =&gt; false,  // print nothing if no menu is assigned
+	) );
+	?&gt;
+&lt;/nav&gt;</code></pre>
+	<p>Check whether a location has a menu with <code>has_nav_menu( 'footer' )</code> before printing its wrapper markup.</p>
+
+	<h3>Styling</h3>
+	<p>WordPress adds helpful classes to menu items: <code>.menu-item</code>, <code>.current-menu-item</code>, <code>.current-menu-ancestor</code>, <code>.menu-item-has-children</code> and <code>.sub-menu</code> for nested lists.</p>
+
+	<h3>A mobile toggle</h3>
+	<p>Add a button with <code>aria-controls</code> and <code>aria-expanded</code>, and toggle a class with a few lines of JavaScript. The boilerplate's <code>assets/js/main.js</code> does exactly this:</p>
+<pre><code>const nav = document.getElementById( 'site-navigation' );
+const button = nav.querySelector( '.menu-toggle' );
+button.addEventListener( 'click', () =&gt; {
+	const open = nav.classList.toggle( 'toggled' );
+	button.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+} );</code></pre>
+</section>
+
+<!-- ================================================================ 10 -->
+<section>
+	<h2><span class="num">10</span>Template parts</h2>
+	<p>The markup for "one post in a list" appears in index.php, archive.php and search.php. Put it in one file and include it with <code>get_template_part()</code>.</p>
+<pre><code>// In index.php, inside the Loop:
+get_template_part( 'template-parts/content', get_post_type() );</code></pre>
+	<p>For a post this looks for <code>template-parts/content-post.php</code>, then falls back to <code>template-parts/content.php</code>. A custom post type <code>book</code> would use <code>content-book.php</code> if it exists.</p>
+	<p class="file">my-theme/template-parts/content.php</p>
+<pre><code>&lt;article id="post-&lt;?php the_ID(); ?&gt;" &lt;?php post_class(); ?&gt;&gt;
+	&lt;header class="entry-header"&gt;
+		&lt;?php the_title( '&lt;h2 class="entry-title"&gt;&lt;a href="' . esc_url( get_permalink() ) . '"&gt;', '&lt;/a&gt;&lt;/h2&gt;' ); ?&gt;
+	&lt;/header&gt;
+	&lt;?php the_post_thumbnail( 'medium_large' ); ?&gt;
+	&lt;div class="entry-summary"&gt;&lt;?php the_excerpt(); ?&gt;&lt;/div&gt;
+&lt;/article&gt;</code></pre>
+
+	<h3>Passing data to a part</h3>
+	<p>Since WordPress 5.5 you can pass an array as the third argument; it's available as <code>$args</code> inside the part:</p>
+<pre><code>get_template_part( 'template-parts/card', null, array( 'show_date' =&gt; false ) );
+
+// template-parts/card.php
+if ( $args['show_date'] ?? true ) { the_date(); }</code></pre>
+
+	<h3>Suggested parts</h3>
+	<ul>
+		<li><code>content.php</code>: summary in lists</li>
+		<li><code>content-single.php</code>: full single post</li>
+		<li><code>content-page.php</code>: page body</li>
+		<li><code>content-search.php</code>: search result</li>
+		<li><code>content-none.php</code>: "nothing found" message</li>
+	</ul>
+</section>
+
+<!-- ================================================================ 11 -->
+<section>
+	<h2><span class="num">11</span>Single, page, archive, search, 404</h2>
+	<p>With header, footer and parts in place, each template becomes short.</p>
+
+	<p class="file">single.php</p>
+<pre><code>&lt;?php get_header(); ?&gt;
+&lt;main id="primary" class="site-main"&gt;
+	&lt;?php
+	while ( have_posts() ) : the_post();
+		get_template_part( 'template-parts/content', 'single' );
+		the_post_navigation();
+		if ( comments_open() || get_comments_number() ) {
+			comments_template();
+		}
+	endwhile;
+	?&gt;
+&lt;/main&gt;
+&lt;?php get_sidebar(); get_footer(); ?&gt;</code></pre>
+
+	<p class="file">archive.php</p>
+<pre><code>&lt;?php get_header(); ?&gt;
+&lt;main id="primary" class="site-main"&gt;
+	&lt;?php if ( have_posts() ) : ?&gt;
+		&lt;header class="page-header"&gt;
+			&lt;?php the_archive_title( '&lt;h1 class="page-title"&gt;', '&lt;/h1&gt;' ); ?&gt;
+			&lt;?php the_archive_description( '&lt;div class="archive-description"&gt;', '&lt;/div&gt;' ); ?&gt;
+		&lt;/header&gt;
+		&lt;?php while ( have_posts() ) : the_post();
+			get_template_part( 'template-parts/content', get_post_type() );
+		endwhile;
+		the_posts_pagination(); ?&gt;
+	&lt;?php else :
+		get_template_part( 'template-parts/content', 'none' );
+	endif; ?&gt;
+&lt;/main&gt;
+&lt;?php get_sidebar(); get_footer(); ?&gt;</code></pre>
+
+	<h3>The others</h3>
+	<ul>
+		<li><strong>page.php</strong>: same as single.php but uses <code>content-page</code> and usually no post navigation.</li>
+		<li><strong>search.php</strong>: prints <code>get_search_query()</code> in the heading (escaped), then the Loop with <code>content-search</code>.</li>
+		<li><strong>404.php</strong>: a friendly message and <code>get_search_form()</code>.</li>
+		<li><strong>front-page.php</strong>: optional; a custom home page layout used whatever the Reading settings say.</li>
+	</ul>
+	<h3>Conditional tags</h3>
+	<p>Inside any template you can branch on the type of request: <code>is_front_page()</code>, <code>is_home()</code>, <code>is_single()</code>, <code>is_page( 'about' )</code>, <code>is_category()</code>, <code>is_search()</code>, <code>is_404()</code>, <code>is_singular( 'book' )</code>.</p>
+</section>
+
+<!-- ================================================================ 12 -->
+<section>
+	<h2><span class="num">12</span>Sidebars and widgets</h2>
+	<p>A "sidebar" is any widget area: a column, a footer row, a banner slot. Register it on <code>widgets_init</code>:</p>
+<pre><code>function my_theme_widgets_init() {
+	register_sidebar( array(
+		'name'          =&gt; __( 'Sidebar', 'my-theme' ),
+		'id'            =&gt; 'sidebar-1',
+		'description'   =&gt; __( 'Shown beside posts and pages.', 'my-theme' ),
+		'before_widget' =&gt; '&lt;section id="%1$s" class="widget %2$s"&gt;',
+		'after_widget'  =&gt; '&lt;/section&gt;',
+		'before_title'  =&gt; '&lt;h2 class="widget-title"&gt;',
+		'after_title'   =&gt; '&lt;/h2&gt;',
+	) );
+}
+add_action( 'widgets_init', 'my_theme_widgets_init' );</code></pre>
+	<p class="file">sidebar.php</p>
+<pre><code>&lt;?php if ( ! is_active_sidebar( 'sidebar-1' ) ) { return; } ?&gt;
+&lt;aside id="secondary" class="widget-area"&gt;
+	&lt;?php dynamic_sidebar( 'sidebar-1' ); ?&gt;
+&lt;/aside&gt;</code></pre>
+	<p>Load it from a template with <code>get_sidebar()</code>. For more areas, register them with new IDs (<code>footer-1</code>, <code>footer-2</code>) and print them with <code>dynamic_sidebar()</code> wherever they belong.</p>
+	<div class="note"><strong>Block widgets</strong>Since WordPress 5.8 the widgets screen uses blocks. Your registered areas work the same way; site owners just add blocks instead of classic widgets.</div>
+</section>
+
+<!-- ================================================================ 13 -->
+<section>
+	<h2><span class="num">13</span>Comments</h2>
+	<p><code>comments_template()</code> loads <code>comments.php</code> from your theme. A minimal version:</p>
+<pre><code>&lt;?php if ( post_password_required() ) { return; } ?&gt;
+
+&lt;div id="comments" class="comments-area"&gt;
+	&lt;?php if ( have_comments() ) : ?&gt;
+		&lt;h2 class="comments-title"&gt;
+			&lt;?php printf(
+				esc_html( _n( '%s comment', '%s comments', get_comments_number(), 'my-theme' ) ),
+				esc_html( number_format_i18n( get_comments_number() ) )
+			); ?&gt;
+		&lt;/h2&gt;
+
+		&lt;ol class="comment-list"&gt;
+			&lt;?php wp_list_comments( array( 'style' =&gt; 'ol', 'avatar_size' =&gt; 48, 'short_ping' =&gt; true ) ); ?&gt;
+		&lt;/ol&gt;
+
+		&lt;?php the_comments_navigation(); ?&gt;
+	&lt;?php endif; ?&gt;
+
+	&lt;?php comment_form(); ?&gt;
+&lt;/div&gt;</code></pre>
+	<ul>
+		<li><code>wp_list_comments()</code> handles threading, avatars and reply links. Pass a <code>callback</code> for fully custom markup.</li>
+		<li><code>comment_form()</code> prints the form with nonces and spam protection hooks. Change its labels through its arguments.</li>
+		<li>Remember to enqueue <code>comment-reply</code> (section 8) so "Reply" moves the form under the comment.</li>
+	</ul>
+</section>
+
+<!-- ================================================================ 14 -->
+<section>
+	<h2><span class="num">14</span>Customizer settings</h2>
+	<p>The Customizer (<strong>Appearance &rarr; Customize</strong>) lets site owners change theme options with a live preview. Each option needs a <em>section</em>, a <em>setting</em> (the stored value) and a <em>control</em> (the input).</p>
+<pre><code>function my_theme_customize_register( $wp_customize ) {
+	$wp_customize-&gt;add_section( 'my_theme_options', array(
+		'title' =&gt; __( 'Theme Options', 'my-theme' ),
+	) );
+
+	$wp_customize-&gt;add_setting( 'my_theme_footer_text', array(
+		'default'           =&gt; '',
+		'sanitize_callback' =&gt; 'sanitize_text_field',   // always sanitize
+	) );
+
+	$wp_customize-&gt;add_control( 'my_theme_footer_text', array(
+		'label'   =&gt; __( 'Footer text', 'my-theme' ),
+		'section' =&gt; 'my_theme_options',
+		'type'    =&gt; 'text',
+	) );
+
+	// A colour picker
+	$wp_customize-&gt;add_setting( 'my_theme_accent', array(
+		'default'           =&gt; '#2563eb',
+		'sanitize_callback' =&gt; 'sanitize_hex_color',
+	) );
+	$wp_customize-&gt;add_control( new WP_Customize_Color_Control(
+		$wp_customize, 'my_theme_accent',
+		array( 'label' =&gt; __( 'Accent colour', 'my-theme' ), 'section' =&gt; 'my_theme_options' )
+	) );
+}
+add_action( 'customize_register', 'my_theme_customize_register' );</code></pre>
+	<p>Read a value in a template with <code>get_theme_mod()</code>, and escape it on output:</p>
+<pre><code>echo esc_html( get_theme_mod( 'my_theme_footer_text', '' ) );</code></pre>
+	<p>Output a colour as a CSS variable so your stylesheet can use it:</p>
+<pre><code>wp_add_inline_style( 'my-theme-main',
+	':root{--color-accent:' . esc_attr( get_theme_mod( 'my_theme_accent', '#2563eb' ) ) . ';}' );</code></pre>
+</section>
+
+<!-- ================================================================ 15 -->
+<section>
+	<h2><span class="num">15</span>Custom page templates</h2>
+	<p>A page template is a PHP file the editor can pick from the <strong>Template</strong> panel when editing a page. Add a <code>Template Name</code> comment at the top:</p>
+	<p class="file">my-theme/templates/full-width.php</p>
+<pre><code>&lt;?php
+/**
+ * Template Name: Full Width
+ * Template Post Type: page, post
+ */
+get_header();
+?&gt;
+&lt;main id="primary" class="site-main site-main--wide"&gt;
+	&lt;?php while ( have_posts() ) : the_post();
+		get_template_part( 'template-parts/content', 'page' );
+	endwhile; ?&gt;
+&lt;/main&gt;
+&lt;?php get_footer(); ?&gt;</code></pre>
+	<p>Templates can live in the theme root or one level deep in a subfolder like <code>templates/</code>.</p>
+
+	<h3>Template file or page template?</h3>
+	<ul>
+		<li><code>page-about.php</code> applies automatically to the page with slug <code>about</code>. If the slug changes, it stops working.</li>
+		<li>A page template applies to whichever page an editor chooses. More flexible for clients.</li>
+	</ul>
+
+	<h3>Where custom post types belong</h3>
+	<div class="warn"><strong>Content in plugins, presentation in themes</strong>Register custom post types, taxonomies and shortcodes in a plugin (or a must-use plugin), not in the theme. If they lived in the theme, switching themes would make that content disappear from the admin. The theme should only provide templates for them, like <code>single-book.php</code> and <code>archive-book.php</code>.</div>
+</section>
+
+<!-- ================================================================ 16 -->
+<section>
+	<h2><span class="num">16</span>Security: escape, sanitize, verify</h2>
+	<p>Three habits prevent almost every theme vulnerability.</p>
+
+	<h3>1. Escape on output, as late as possible</h3>
+	<p>Any value that isn't a hard-coded string should pass through an escaping function right where it's printed.</p>
+	<table>
+		<tr><th>Function</th><th>Use for</th></tr>
+		<tr><td><code>esc_html()</code></td><td>Text inside HTML elements</td></tr>
+		<tr><td><code>esc_attr()</code></td><td>Values inside HTML attributes</td></tr>
+		<tr><td><code>esc_url()</code></td><td>URLs in <code>href</code> and <code>src</code></td></tr>
+		<tr><td><code>esc_js()</code> / <code>wp_json_encode()</code></td><td>Values placed in inline JavaScript</td></tr>
+		<tr><td><code>wp_kses_post()</code></td><td>HTML that may contain safe tags (like post content)</td></tr>
+		<tr><td><code>esc_html__()</code>, <code>esc_html_e()</code>, <code>esc_attr__()</code></td><td>Translate and escape in one step</td></tr>
+	</table>
+<pre><code>&lt;a href="&lt;?php echo esc_url( $link ); ?&gt;" title="&lt;?php echo esc_attr( $label ); ?&gt;"&gt;
+	&lt;?php echo esc_html( $label ); ?&gt;
+&lt;/a&gt;</code></pre>
+
+	<h3>2. Sanitize on input</h3>
+	<p>Clean any data before storing it: <code>sanitize_text_field()</code>, <code>sanitize_email()</code>, <code>absint()</code>, <code>sanitize_hex_color()</code>, <code>esc_url_raw()</code>. Every Customizer setting needs a <code>sanitize_callback</code>.</p>
+
+	<h3>3. Verify intent and permission</h3>
+	<p>If your theme handles a form or an AJAX request, check a nonce and the user's capability:</p>
+<pre><code>if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), 'my_theme_action' ) ) {
+	wp_die( esc_html__( 'Security check failed.', 'my-theme' ) );
+}
+if ( ! current_user_can( 'edit_theme_options' ) ) {
+	wp_die( esc_html__( 'Not allowed.', 'my-theme' ) );
+}</code></pre>
+
+	<h3>Other rules</h3>
+	<ul>
+		<li>Start PHP files that shouldn't be loaded directly with <code>if ( ! defined( 'ABSPATH' ) ) exit;</code></li>
+		<li>Use <code>$wpdb-&gt;prepare()</code> for any raw SQL (though a theme rarely needs raw SQL).</li>
+		<li>Never <code>eval()</code>, never include files based on user input.</li>
+	</ul>
+</section>
+
+<!-- ================================================================ 17 -->
+<section>
+	<h2><span class="num">17</span>Translation (i18n)</h2>
+	<p>Wrap every user-facing string in a translation function with your theme's <strong>text domain</strong> (it must match the folder slug and the <code>Text Domain</code> header).</p>
+	<table>
+		<tr><th>Function</th><th>Does</th></tr>
+		<tr><td><code>__( 'Text', 'my-theme' )</code></td><td>Returns the translated string</td></tr>
+		<tr><td><code>_e( 'Text', 'my-theme' )</code></td><td>Echoes it</td></tr>
+		<tr><td><code>esc_html__()</code> / <code>esc_html_e()</code></td><td>Translate + escape for HTML</td></tr>
+		<tr><td><code>esc_attr__()</code> / <code>esc_attr_e()</code></td><td>Translate + escape for attributes</td></tr>
+		<tr><td><code>_n( 'One', 'Many', $count, 'my-theme' )</code></td><td>Singular/plural</td></tr>
+		<tr><td><code>_x( 'Post', 'verb', 'my-theme' )</code></td><td>Adds context for translators</td></tr>
+	</table>
+	<p>Use placeholders rather than joining strings, and leave a comment for translators:</p>
+<pre><code>/* translators: %s: search query. */
+printf( esc_html__( 'Search results for: %s', 'my-theme' ), '&lt;span&gt;' . esc_html( get_search_query() ) . '&lt;/span&gt;' );</code></pre>
+	<p>Load the text domain in your setup function (section 7), then generate the template file with WP-CLI:</p>
+<pre><code>wp i18n make-pot . languages/my-theme.pot</code></pre>
+	<p>Translators use the <code>.pot</code> file with a tool like Poedit to produce <code>.po</code>/<code>.mo</code> files (e.g. <code>languages/fr_FR.mo</code>).</p>
+</section>
+
+<!-- ================================================================ 18 -->
+<section>
+	<h2><span class="num">18</span>Child themes</h2>
+	<p>A child theme changes another theme without editing it, so updates to the parent don't wipe out your changes. If you're customising someone else's theme, always use a child theme.</p>
+	<p class="file">my-theme-child/style.css</p>
+<pre><code>/*
+Theme Name: My Theme Child
+Template:   my-theme
+Version:    1.0.0
+*/</code></pre>
+	<p><code>Template</code> must be the parent's folder name.</p>
+	<p class="file">my-theme-child/functions.php</p>
+<pre><code>&lt;?php
+add_action( 'wp_enqueue_scripts', function () {
+	wp_enqueue_style( 'my-theme-child', get_stylesheet_uri(), array( 'my-theme-style' ),
+		wp_get_theme()-&gt;get( 'Version' ) );
+} );</code></pre>
+
+	<h3>How overriding works</h3>
+	<ul>
+		<li><strong>Templates</strong>: copy any template (<code>single.php</code>, <code>template-parts/content.php</code>) into the child at the same path. The child's copy wins.</li>
+		<li><strong>functions.php</strong>: both run. The child's loads first, which is why parent helpers wrapped in <code>function_exists()</code> can be replaced.</li>
+		<li><strong>Hooks</strong>: use <code>remove_action()</code> / <code>add_action()</code> in the child to change parent behaviour.</li>
+	</ul>
+	<div class="note"><strong>Make your own theme child-friendly</strong>Load files with <code>get_template_part()</code> (it checks the child first), use <code>get_template_directory_uri()</code> for parent assets, and wrap template helpers in <code>function_exists()</code>.</div>
+</section>
+
+<!-- ================================================================ 19 -->
+<section>
+	<h2><span class="num">19</span>Testing and debugging</h2>
+	<h3>Test with realistic content</h3>
+	<ol>
+		<li>Download the Theme Unit Test XML (search "WordPress theme unit test data").</li>
+		<li>Import it via <strong>Tools &rarr; Import &rarr; WordPress</strong>.</li>
+		<li>Click through every post: long titles, no titles, sticky posts, nested comments, image alignments, galleries, password-protected posts, many tags.</li>
+	</ol>
+
+	<h3>Run the checkers</h3>
+	<ul>
+		<li><strong>Theme Check</strong> plugin: required files, deprecated functions, missing escaping, licence issues.</li>
+		<li><strong>PHP_CodeSniffer</strong> with <em>WordPress Coding Standards</em>:<br><code>composer require --dev wp-coding-standards/wpcs</code> then <code>vendor/bin/phpcs --standard=WordPress .</code></li>
+		<li><strong>PHP lint</strong>: <code>php -l functions.php</code> catches syntax errors before WordPress does.</li>
+	</ul>
+
+	<h3>Check the front end</h3>
+	<ul>
+		<li>Every screen width from 320 px up; no horizontal scroll.</li>
+		<li>Keyboard only: Tab through the page, the skip link appears, focus is visible, the menu opens.</li>
+		<li>A screen reader or the browser's accessibility panel: landmarks (<code>header</code>, <code>nav</code>, <code>main</code>, <code>footer</code>) and labels are present.</li>
+		<li>Lighthouse or PageSpeed Insights for performance and accessibility scores.</li>
+		<li>Logged in (admin bar visible) and logged out.</li>
+	</ul>
+
+	<h3>When something breaks</h3>
+	<ul>
+		<li>White screen: read <code>wp-content/debug.log</code>.</li>
+		<li>Wrong template: check Query Monitor's Template panel.</li>
+		<li>Styles not loading: view source, find your handle, check the URL and version.</li>
+		<li>Changes not showing: clear caching plugins and the browser cache, or bump the version.</li>
+	</ul>
+</section>
+
+<!-- ================================================================ 20 -->
+<section>
+	<h2><span class="num">20</span>Packaging and distribution</h2>
+	<h3>Before you zip</h3>
+	<ul>
+		<li>Bump <code>Version</code> in <code>style.css</code> and add a changelog entry in <code>readme.txt</code>.</li>
+		<li>Remove development files: <code>node_modules/</code>, <code>.git/</code>, source maps you don't need, <code>.DS_Store</code>.</li>
+		<li>Include built assets, <code>screenshot.png</code>, <code>readme.txt</code> and the licence.</li>
+	</ul>
+
+	<h3>Create the zip</h3>
+	<p>The zip must contain the theme folder itself, not loose files:</p>
+<pre><code>my-theme.zip
+└── my-theme/
+    ├── style.css
+    ├── index.php
+    └── ...</code></pre>
+	<p>Install it under <strong>Appearance &rarr; Themes &rarr; Add New &rarr; Upload Theme</strong>, or copy the folder to <code>wp-content/themes/</code> over SFTP.</p>
+
+	<h3>Publishing on WordPress.org</h3>
+	<ul>
+		<li>Must be 100% GPL-compatible, including fonts, images and libraries.</li>
+		<li>Must pass Theme Check and the manual review (escaping, prefixing, no plugin-territory features, no upsell nags).</li>
+		<li>Must have a valid <code>readme.txt</code> with <code>Requires at least</code>, <code>Tested up to</code> and <code>Requires PHP</code>.</li>
+		<li>Upload at wordpress.org/themes/upload once you have a WordPress.org account.</li>
+	</ul>
+
+	<h3>Deploying to a client site</h3>
+	<p>Keep the theme in Git. Deploy with your host's Git integration, a CI pipeline (GitHub Actions + rsync/SFTP), or by uploading the zip. Never edit theme files on the live server.</p>
+</section>
+
+<!-- ================================================================ 21 -->
+<section>
+	<h2><span class="num">21</span>Using the blank-theme boilerplate</h2>
+	<p>The <code>blank-theme/</code> folder next to this PDF contains everything in this guide, ready to rename and build on.</p>
+	<pre class="tree"><code>blank-theme/
+├── style.css               Theme header + core WP classes
+├── functions.php           Setup, menus, widgets, enqueues
+├── index.php               Fallback template
+├── header.php / footer.php Site header and footer
+├── single.php              Single post
+├── page.php                Static page
+├── archive.php             Archives
+├── search.php              Search results
+├── 404.php                 Not found
+├── sidebar.php             Widget area
+├── comments.php            Comment list + form
+├── searchform.php          Search form
+├── readme.txt              Theme readme
+├── template-parts/
+│   ├── content.php         Post summary
+│   ├── content-single.php  Full post
+│   ├── content-page.php    Page body
+│   ├── content-search.php  Search result
+│   └── content-none.php    Nothing found
+├── inc/
+│   ├── template-tags.php   Date/author, footer meta, thumbnails
+│   └── customizer.php      Sample "Footer text" setting
+├── assets/
+│   ├── css/main.css        Base styles
+│   └── js/main.js          Mobile menu toggle
+└── languages/              Translation files</code></pre>
+
+	<h3>Make it yours in five steps</h3>
+	<ol>
+		<li>Rename the folder, e.g. <code>blank-theme</code> &rarr; <code>my-theme</code>.</li>
+		<li>Find and replace across all files (case-sensitive, in this order):
+			<table>
+				<tr><th>Find</th><th>Replace with</th><th>What it is</th></tr>
+				<tr><td><code>'blank-theme'</code></td><td><code>'my-theme'</code></td><td>Text domain and handles</td></tr>
+				<tr><td><code>blank_theme_</code></td><td><code>my_theme_</code></td><td>Function prefix</td></tr>
+				<tr><td><code>BLANK_THEME_</code></td><td><code>MY_THEME_</code></td><td>Constants</td></tr>
+				<tr><td><code>Blank_Theme</code></td><td><code>My_Theme</code></td><td><code>@package</code> tag</td></tr>
+				<tr><td><code>Blank Theme</code></td><td><code>My Theme</code></td><td>Theme name</td></tr>
+			</table>
+		</li>
+		<li>Fill in the <code>style.css</code> header: author, URIs, description.</li>
+		<li>Add a 1200&times;900 <code>screenshot.png</code>.</li>
+		<li>Copy the folder into <code>wp-content/themes/</code> and activate it.</li>
+	</ol>
+	<p>Then start designing: edit <code>assets/css/main.css</code>, add the templates your design needs, and grow <code>inc/</code> as features arrive.</p>
+</section>
+
+<!-- ================================================================ 22 -->
+<section>
+	<h2><span class="num">22</span>Launch checklist and resources</h2>
+	<h3>Checklist</h3>
+	<ul class="check">
+		<li><code>style.css</code> header complete; version bumped</li>
+		<li><code>wp_head()</code>, <code>wp_body_open()</code>, <code>wp_footer()</code>, <code>body_class()</code>, <code>post_class()</code> all present</li>
+		<li>All CSS/JS enqueued, none hard-coded</li>
+		<li>Every function, handle and option prefixed</li>
+		<li>Every dynamic output escaped; every saved value sanitized</li>
+		<li>Every string translatable with the correct text domain</li>
+		<li>No custom post types, shortcodes or analytics in the theme</li>
+		<li>Theme Unit Test data looks right; no PHP notices in <code>debug.log</code></li>
+		<li>Theme Check passes</li>
+		<li>Works from 320 px wide; keyboard-navigable; skip link works</li>
+		<li><code>screenshot.png</code> and <code>readme.txt</code> included</li>
+		<li>Zip contains the theme folder, without dev files</li>
+	</ul>
+
+	<h3>Official resources</h3>
+	<ul>
+		<li>Theme Handbook: developer.wordpress.org/themes/</li>
+		<li>Template Hierarchy: developer.wordpress.org/themes/basics/template-hierarchy/</li>
+		<li>Code Reference (every function and hook): developer.wordpress.org/reference/</li>
+		<li>Coding Standards: developer.wordpress.org/coding-standards/</li>
+		<li>Theme Review guidelines: make.wordpress.org/themes/handbook/review/</li>
+		<li>Block themes and theme.json: developer.wordpress.org/themes/global-settings-and-styles/</li>
+	</ul>
+
+	<h3>Where to go next</h3>
+	<ul>
+		<li>Add a <code>theme.json</code> to control block editor colours, fonts and spacing, even in a classic theme.</li>
+		<li>Register block patterns in a <code>patterns/</code> folder so editors can drop in ready-made sections.</li>
+		<li>Try converting the theme into a block theme with <code>templates/</code> and <code>parts/</code> HTML files.</li>
+	</ul>
+</section>
+
+</body>
+</html>
